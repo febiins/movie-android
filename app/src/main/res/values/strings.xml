@@ -1,3 +1,29 @@
 <resources>
     <string name="app_name">Movue</string>
+    <string name="title_home">Home</string>
+    <string name="title_search">Search</string>
+    <string name="title_diary">Diary</string>
+    <string name="title_profile">Profile</string>
+    <string name="title_watchlist">Watchlist</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="username">Username</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="search_hint">Search movies...</string>
+    <string name="watchlist_add">Add to Watchlist</string>
+    <string name="mark_as_watched">Mark as Watched</string>
+    <string name="write_review">Write a Review</string>
+    <string name="submit_review">Submit Review</string>
+    <string name="cancel">Cancel</string>
+    <string name="logout">Logout</string>
+    <string name="empty_watchlist">Your watchlist is empty.</string>
+    <string name="empty_diary">Your diary is empty. Start watching movies!</string>
+    <string name="greeting">Hello, %1$s!</string>
+    <string name="featured_movies">Featured Movies</string>
+    <string name="curated_movies">Curated Movies</string>
+    <string name="recently_watched">Recently Watched</string>
 </resources>

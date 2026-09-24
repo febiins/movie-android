@@ -50,7 +50,7 @@ public class WatchlistFragment extends Fragment implements WatchlistAdapter.OnWa
     }
 
     private void loadWatchlist() {
-        List<Movie> movies = MovieManager.getInstance().getWatchlistMovies();
+        List<Movie> movies = MovieManager.getInstance(requireContext()).getWatchlistMovies();
         if (movies == null || movies.isEmpty()) {
             tvEmptyWatchlist.setVisibility(View.VISIBLE);
             watchlistAdapter.setMovies(null);
@@ -69,7 +69,7 @@ public class WatchlistFragment extends Fragment implements WatchlistAdapter.OnWa
 
     @Override
     public void onRemoveClick(Movie movie) {
-        MovieManager.getInstance().removeFromWatchlist(movie.getId());
+        MovieManager.getInstance(requireContext()).removeFromWatchlist(movie.getId());
         Toast.makeText(requireContext(), "Removed from Watchlist", Toast.LENGTH_SHORT).show();
         loadWatchlist();
     }

@@ -46,7 +46,7 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
     @Override
     public void onBindViewHolder(@NonNull DiaryViewHolder holder, int position) {
         WatchedMovie watched = watchedMovies.get(position);
-        Movie movie = MovieManager.getInstance().getMovieById(watched.getMovieId());
+        Movie movie = MovieManager.getInstance(holder.itemView.getContext()).getMovieById(watched.getMovieId());
 
         if (movie != null) {
             holder.tvTitle.setText(movie.getTitle());

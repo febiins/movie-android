@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.movue.MainActivity;
 import com.example.movue.R;
+import com.example.movue.data.DatabaseHelper;
+import com.example.movue.model.User;
 import com.example.movue.utils.PreferenceManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -22,11 +24,14 @@ public class LoginActivity extends AppCompatActivity {
     private MaterialButton btnLogin;
     private TextView tvRegister;
     private ProgressBar progressBar;
+    private DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        databaseHelper = new DatabaseHelper(this);
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -60,11 +65,20 @@ public class LoginActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         btnLogin.setEnabled(false);
 
-        // Simple local authentication
-        PreferenceManager.getInstance(this).saveLogin(email, email);
+        User user = databaseHelper.authenticateUser(email, password);
 
-        Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-        finish();
+        progressBar.setVisibility(View.GONE);
+        btnLogin.setEnabled(true);
+
+        if (user != null) {
+            // Save login session via PreferenceManager including user ID
+            PreferenceManager.getInstance(this).saveLogin(user.getId(), user.getUsername(), user.getEmail());
+
+            Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
+        } else {
+            Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show();
+        }
     }
 }

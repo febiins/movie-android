@@ -50,7 +50,7 @@ public class DiaryFragment extends Fragment implements DiaryAdapter.OnMovieClick
     }
 
     private void loadDiary() {
-        List<WatchedMovie> watchedMovies = MovieManager.getInstance().getWatchedMovies();
+        List<WatchedMovie> watchedMovies = MovieManager.getInstance(requireContext()).getWatchedMovies();
         if (watchedMovies == null || watchedMovies.isEmpty()) {
             llEmptyDiary.setVisibility(View.VISIBLE);
             diaryAdapter.setWatchedMovies(null);

@@ -8,9 +8,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.movue.R;
-import com.example.movue.model.Review;
 import com.example.movue.utils.MovieManager;
-import com.example.movue.utils.PreferenceManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -54,22 +52,15 @@ public class ReviewActivity extends AppCompatActivity {
             return;
         }
 
-        String username = PreferenceManager.getInstance(this).getUsername();
-        String date = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
+        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-        Review review = new Review(
-                MovieManager.getInstance().getAllReviews().size() + 1,
-                movieId,
-                username,
-                rating,
-                reviewText,
-                date
-        );
+        long result = MovieManager.getInstance(this).addReview(movieId, rating, reviewText, date);
 
-        MovieManager.getInstance().addReview(review);
-        MovieManager.getInstance().markAsWatched(movieId, date, rating, reviewText);
-
-        Toast.makeText(this, "Review submitted successfully", Toast.LENGTH_SHORT).show();
-        finish();
+        if (result != -1) {
+            Toast.makeText(this, "Review submitted successfully", Toast.LENGTH_SHORT).show();
+            finish();
+        } else {
+            Toast.makeText(this, "Failed to submit review", Toast.LENGTH_SHORT).show();
+        }
     }
 }

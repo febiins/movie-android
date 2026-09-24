@@ -22,9 +22,6 @@ import java.util.Locale;
 
 public class ProfileFragment extends Fragment {
 
-
-
-
     private TextView tvUsername;
     private TextView tvWatchedCount;
     private TextView tvReviewCount;
@@ -61,7 +58,7 @@ public class ProfileFragment extends Fragment {
 
     private void updateProfile() {
         PreferenceManager pref = PreferenceManager.getInstance(requireContext());
-        MovieManager manager = MovieManager.getInstance();
+        MovieManager manager = MovieManager.getInstance(requireContext());
 
         tvUsername.setText(pref.getUsername());
         tvWatchedCount.setText(String.format(Locale.getDefault(), "%d", manager.getWatchedCount()));

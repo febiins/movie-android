@@ -61,11 +61,12 @@ public class SearchFragment extends Fragment implements SearchAdapter.OnMovieCli
     }
 
     private void performSearch(String query) {
+        MovieManager manager = MovieManager.getInstance(requireContext());
         List<Movie> results;
         if (query.trim().isEmpty()) {
-            results = MovieManager.getInstance().getAllMovies();
+            results = manager.getAllMovies();
         } else {
-            results = MovieManager.getInstance().searchMovies(query);
+            results = manager.searchMovies(query);
         }
 
         searchAdapter.setMovies(results);

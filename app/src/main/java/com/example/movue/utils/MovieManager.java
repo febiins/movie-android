@@ -1,8 +1,11 @@
 package com.example.movue.utils;
 
-import com.example.movue.data.MovieData;
+import android.content.Context;
+
+import com.example.movue.data.DatabaseHelper;
 import com.example.movue.model.Movie;
 import com.example.movue.model.Review;
+import com.example.movue.model.User;
 import com.example.movue.model.WatchedMovie;
 
 import java.util.ArrayList;
@@ -12,120 +15,146 @@ public class MovieManager {
 
     private static MovieManager instance;
 
-    private final List<Movie> allMovies;
-    private final List<Integer> watchlistMovieIds;
-    private final List<WatchedMovie> watchedMovies;
-    private final List<Review> reviews;
+    private Context context;
+    private DatabaseHelper dbHelper;
 
-    private MovieManager() {
-        allMovies = new ArrayList<>(MovieData.getSampleMovies());
-        watchlistMovieIds = new ArrayList<>();
-        watchedMovies = new ArrayList<>();
-        reviews = new ArrayList<>();
-
-        // Add some initial sample activity for demo
-        if (!allMovies.isEmpty()) {
-            watchlistMovieIds.add(allMovies.get(0).getId());
-            watchlistMovieIds.add(allMovies.get(1).getId());
-
-            WatchedMovie sampleWatched = new WatchedMovie(allMovies.get(0).getId(), "15 Sep 2026", 5.0f, "Mind-bending masterpiece!");
-            watchedMovies.add(sampleWatched);
-
-            Review sampleReview = new Review(1, allMovies.get(0).getId(), "User", 5.0f, "Mind-bending masterpiece! Loved Nolan's direction.", "15 Sep 2026");
-            reviews.add(sampleReview);
+    private MovieManager(Context context) {
+        if (context != null) {
+            this.context = context.getApplicationContext();
+            this.dbHelper = new DatabaseHelper(this.context);
+            this.dbHelper.initializeMovies();
         }
     }
 
-    public static synchronized MovieManager getInstance() {
+    public static synchronized MovieManager getInstance(Context context) {
         if (instance == null) {
-            instance = new MovieManager();
+            instance = new MovieManager(context);
+        } else if (context != null) {
+            instance.context = context.getApplicationContext();
+            if (instance.dbHelper == null) {
+                instance.dbHelper = new DatabaseHelper(instance.context);
+                instance.dbHelper.initializeMovies();
+            }
         }
         return instance;
     }
 
+    public static synchronized MovieManager getInstance() {
+        if (instance == null) {
+            instance = new MovieManager(null);
+        }
+        return instance;
+    }
+
+    private int getCurrentUserId() {
+        if (context != null) {
+            int userId = PreferenceManager.getInstance(context).getUserId();
+            if (userId <= 0) {
+                String email = PreferenceManager.getInstance(context).getEmail();
+                if (!email.isEmpty() && dbHelper != null) {
+                    User user = dbHelper.getUserByEmail(email);
+                    if (user != null) {
+                        userId = user.getId();
+                        PreferenceManager.getInstance(context).saveUserId(userId);
+                    }
+                }
+            }
+            return userId;
+        }
+        return -1;
+    }
+
     public List<Movie> getAllMovies() {
-        return allMovies;
+        if (dbHelper != null) {
+            return dbHelper.getAllMovies();
+        }
+        return new ArrayList<>();
     }
 
     public Movie getMovieById(int id) {
-        for (Movie movie : allMovies) {
-            if (movie.getId() == id) {
-                return movie;
-            }
+        if (dbHelper != null) {
+            return dbHelper.getMovieById(id);
         }
         return null;
     }
 
     public List<Movie> searchMovies(String query) {
-        List<Movie> results = new ArrayList<>();
-        if (query == null || query.trim().isEmpty()) {
-            return results;
+        if (dbHelper != null) {
+            return dbHelper.searchMovies(query);
         }
-
-        String lowerQuery = query.toLowerCase().trim();
-        for (Movie movie : allMovies) {
-            if (movie.getTitle().toLowerCase().contains(lowerQuery) ||
-                movie.getGenre().toLowerCase().contains(lowerQuery) ||
-                String.valueOf(movie.getReleaseYear()).contains(lowerQuery)) {
-                results.add(movie);
-            }
-        }
-        return results;
+        return new ArrayList<>();
     }
 
-    // Watchlist operations
-    public void addToWatchlist(int movieId) {
-        if (!watchlistMovieIds.contains(movieId)) {
-            watchlistMovieIds.add(movieId);
+    // Watchlist operations (SQLite backed)
+    public boolean addToWatchlist(int movieId) {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.addToWatchlist(userId, movieId);
         }
+        return false;
     }
 
-    public void removeFromWatchlist(int movieId) {
-        watchlistMovieIds.remove(Integer.valueOf(movieId));
+    public boolean removeFromWatchlist(int movieId) {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.removeFromWatchlist(userId, movieId);
+        }
+        return false;
     }
 
     public boolean isInWatchlist(int movieId) {
-        return watchlistMovieIds.contains(movieId);
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.isInWatchlist(userId, movieId);
+        }
+        return false;
     }
 
     public List<Movie> getWatchlistMovies() {
-        List<Movie> list = new ArrayList<>();
-        for (int id : watchlistMovieIds) {
-            Movie m = getMovieById(id);
-            if (m != null) {
-                list.add(m);
-            }
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.getWatchlistMovies(userId);
         }
-        return list;
+        return new ArrayList<>();
     }
 
-    // Watched movies operations
-    public void markAsWatched(int movieId, String date, float rating, String reviewText) {
-        if (!isWatched(movieId)) {
-            WatchedMovie watched = new WatchedMovie(movieId, date, rating, reviewText);
-            watchedMovies.add(watched);
+    public int getWatchlistCount() {
+        return getWatchlistMovies().size();
+    }
+
+    // Watched movies operations (SQLite backed)
+    public boolean markAsWatched(int movieId, String date, float rating, String reviewText) {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            long result = dbHelper.markAsWatched(userId, movieId, date, rating);
+            if (reviewText != null && !reviewText.trim().isEmpty()) {
+                dbHelper.addReview(userId, movieId, rating, reviewText, date);
+            }
+            return result != -1;
         }
-        if (reviewText != null && !reviewText.trim().isEmpty()) {
-            addReview(new Review(reviews.size() + 1, movieId, "User", rating, reviewText, date));
-        }
+        return false;
     }
 
     public boolean isWatched(int movieId) {
-        for (WatchedMovie wm : watchedMovies) {
-            if (wm.getMovieId() == movieId) {
-                return true;
-            }
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.isWatched(userId, movieId);
         }
         return false;
     }
 
     public List<WatchedMovie> getWatchedMovies() {
-        return watchedMovies;
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.getWatchedMovies(userId);
+        }
+        return new ArrayList<>();
     }
 
     public List<Movie> getWatchedMoviesList() {
         List<Movie> list = new ArrayList<>();
-        for (WatchedMovie wm : watchedMovies) {
+        List<WatchedMovie> watchedList = getWatchedMovies();
+        for (WatchedMovie wm : watchedList) {
             Movie m = getMovieById(wm.getMovieId());
             if (m != null) {
                 list.add(m);
@@ -134,44 +163,65 @@ public class MovieManager {
         return list;
     }
 
-    // Reviews operations
+    public int getWatchedCount() {
+        return getWatchedMovies().size();
+    }
+
+    // Reviews operations (SQLite backed)
+    public long addReview(int movieId, float rating, String reviewText, String date) {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            dbHelper.markAsWatched(userId, movieId, date, rating);
+            return dbHelper.addReview(userId, movieId, rating, reviewText, date);
+        }
+        return -1;
+    }
+
     public void addReview(Review review) {
-        reviews.add(review);
+        if (review != null) {
+            addReview(review.getMovieId(), review.getRating(), review.getReviewText(), review.getDate());
+        }
     }
 
     public List<Review> getReviewsForMovie(int movieId) {
-        List<Review> movieReviews = new ArrayList<>();
-        for (Review r : reviews) {
-            if (r.getMovieId() == movieId) {
-                movieReviews.add(r);
-            }
+        if (dbHelper != null) {
+            return dbHelper.getReviewsForMovie(movieId);
         }
-        return movieReviews;
+        return new ArrayList<>();
     }
 
-    public List<Review> getAllReviews() {
-        return reviews;
+    public List<Review> getReviewsByUser() {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.getReviewsByUser(userId);
+        }
+        return new ArrayList<>();
     }
 
-    // Statistics
-    public int getWatchedCount() {
-        return watchedMovies.size();
+    public int getReviewCount() {
+        int userId = getCurrentUserId();
+        if (userId > 0 && dbHelper != null) {
+            return dbHelper.getReviewCount(userId);
+        }
+        return 0;
     }
 
     public int getReviewsCount() {
-        return reviews.size();
+        return getReviewCount();
     }
 
-    public int getWatchlistCount() {
-        return watchlistMovieIds.size();
+    public List<Review> getAllReviews() {
+        return getReviewsByUser();
     }
 
+    // Statistics
     public float getAverageRating() {
-        if (reviews.isEmpty()) return 0.0f;
+        List<Review> userReviews = getReviewsByUser();
+        if (userReviews.isEmpty()) return 0.0f;
         float total = 0.0f;
-        for (Review r : reviews) {
+        for (Review r : userReviews) {
             total += r.getRating();
         }
-        return total / reviews.size();
+        return total / userReviews.size();
     }
 }

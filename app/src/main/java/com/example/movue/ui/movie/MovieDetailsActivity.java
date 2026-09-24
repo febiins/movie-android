@@ -38,7 +38,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_movie_details);
 
         movieId = getIntent().getIntExtra("movie_id", -1);
-        currentMovie = MovieManager.getInstance().getMovieById(movieId);
+        currentMovie = MovieManager.getInstance(this).getMovieById(movieId);
 
         if (currentMovie == null) {
             Toast.makeText(this, "Movie not found", Toast.LENGTH_SHORT).show();
@@ -87,7 +87,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
     }
 
     private void updateButtonStates() {
-        MovieManager manager = MovieManager.getInstance();
+        MovieManager manager = MovieManager.getInstance(this);
 
         if (manager.isInWatchlist(movieId)) {
             btnWatchlist.setText("Remove from Watchlist");
@@ -105,19 +105,23 @@ public class MovieDetailsActivity extends AppCompatActivity {
     }
 
     private void toggleWatchlist() {
-        MovieManager manager = MovieManager.getInstance();
+        MovieManager manager = MovieManager.getInstance(this);
         if (manager.isInWatchlist(movieId)) {
             manager.removeFromWatchlist(movieId);
             Toast.makeText(this, "Removed from watchlist", Toast.LENGTH_SHORT).show();
         } else {
-            manager.addToWatchlist(movieId);
-            Toast.makeText(this, "Added to watchlist", Toast.LENGTH_SHORT).show();
+            boolean success = manager.addToWatchlist(movieId);
+            if (success) {
+                Toast.makeText(this, "Added to watchlist", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Failed to add to watchlist", Toast.LENGTH_SHORT).show();
+            }
         }
         updateButtonStates();
     }
 
     private void toggleWatched() {
-        MovieManager manager = MovieManager.getInstance();
+        MovieManager manager = MovieManager.getInstance(this);
         if (!manager.isWatched(movieId)) {
             String date = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
             manager.markAsWatched(movieId, date, (float) currentMovie.getRating(), "");
@@ -127,7 +131,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
     }
 
     private void loadReviews() {
-        List<Review> reviews = MovieManager.getInstance().getReviewsForMovie(movieId);
+        List<Review> reviews = MovieManager.getInstance(this).getReviewsForMovie(movieId);
         reviewAdapter.setReviews(reviews);
     }
 }

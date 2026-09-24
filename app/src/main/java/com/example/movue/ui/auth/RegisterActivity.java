@@ -10,9 +10,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.movue.MainActivity;
 import com.example.movue.R;
-import com.example.movue.utils.PreferenceManager;
+import com.example.movue.data.DatabaseHelper;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -22,11 +21,14 @@ public class RegisterActivity extends AppCompatActivity {
     private MaterialButton btnRegister;
     private TextView tvLogin;
     private ProgressBar progressBar;
+    private DatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        databaseHelper = new DatabaseHelper(this);
 
         etUsername = findViewById(R.id.etUsername);
         etEmail = findViewById(R.id.etEmail);
@@ -38,7 +40,10 @@ public class RegisterActivity extends AppCompatActivity {
 
         btnRegister.setOnClickListener(v -> performRegister());
 
-        tvLogin.setOnClickListener(v -> finish());
+        tvLogin.setOnClickListener(v -> {
+            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+            finish();
+        });
     }
 
     private void performRegister() {
@@ -65,20 +70,48 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
+        if (TextUtils.isEmpty(confirmPassword)) {
+            etConfirmPassword.setError("Please confirm your password");
+            etConfirmPassword.requestFocus();
+            return;
+        }
+
         if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
             etConfirmPassword.requestFocus();
             return;
         }
 
+        // Check if email already exists
+        if (databaseHelper.getUserByEmail(email) != null) {
+            etEmail.setError("Email already registered");
+            etEmail.requestFocus();
+            Toast.makeText(this, "Email is already registered", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if username already exists
+        if (databaseHelper.getUserByUsername(username) != null) {
+            etUsername.setError("Username already taken");
+            etUsername.requestFocus();
+            Toast.makeText(this, "Username is already taken", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         progressBar.setVisibility(View.VISIBLE);
         btnRegister.setEnabled(false);
 
-        // Save user registration locally
-        PreferenceManager.getInstance(this).saveLogin(username, email);
+        long rowId = databaseHelper.insertUser(username, email, password);
 
-        Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show();
-        startActivity(new Intent(RegisterActivity.this, MainActivity.class));
-        finishAffinity();
+        progressBar.setVisibility(View.GONE);
+        btnRegister.setEnabled(true);
+
+        if (rowId != -1) {
+            Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+            finish();
+        } else {
+            Toast.makeText(this, "Registration failed. Please try again.", Toast.LENGTH_SHORT).show();
+        }
     }
 }

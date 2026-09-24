@@ -65,7 +65,7 @@ public class HomeFragment extends Fragment implements MovieAdapter.OnMovieClickL
     }
 
     private void loadData() {
-        MovieManager manager = MovieManager.getInstance();
+        MovieManager manager = MovieManager.getInstance(requireContext());
         List<Movie> allMovies = manager.getAllMovies();
 
         if (allMovies.size() >= 5) {

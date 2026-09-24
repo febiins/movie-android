@@ -6,21 +6,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
-import com.example.movue.data.local.PreferencesManager;
 import com.example.movue.model.Movie;
+import com.example.movue.model.WatchedMovie;
 import com.example.movue.ui.movie.MovieDetailsActivity;
-import com.example.movue.viewmodel.DiaryViewModel;
-import com.example.movue.viewmodel.ViewModelFactory;
+import com.example.movue.utils.MovieManager;
+
+import java.util.List;
 
 public class DiaryFragment extends Fragment implements DiaryAdapter.OnMovieClickListener {
-    private DiaryViewModel diaryViewModel;
+
     private DiaryAdapter diaryAdapter;
     private LinearLayout llEmptyDiary;
 
@@ -32,28 +34,30 @@ public class DiaryFragment extends Fragment implements DiaryAdapter.OnMovieClick
         RecyclerView rvDiary = view.findViewById(R.id.rvDiary);
         llEmptyDiary = view.findViewById(R.id.llEmptyDiary);
 
-        diaryAdapter = new DiaryAdapter();
-        diaryAdapter.setOnMovieClickListener(this);
+        diaryAdapter = new DiaryAdapter(this);
         rvDiary.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvDiary.setAdapter(diaryAdapter);
 
-        diaryViewModel = new ViewModelProvider(this, new ViewModelFactory(requireContext())).get(DiaryViewModel.class);
-        
         loadDiary();
 
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadDiary();
+    }
+
     private void loadDiary() {
-        int userId = 1; // Mock user ID
-        diaryViewModel.getWatchedMovies(userId).observe(getViewLifecycleOwner(), resource -> {
-            if (resource.data != null && !resource.data.isEmpty()) {
-                diaryAdapter.setMovies(resource.data);
-                llEmptyDiary.setVisibility(View.GONE);
-            } else {
-                llEmptyDiary.setVisibility(View.VISIBLE);
-            }
-        });
+        List<WatchedMovie> watchedMovies = MovieManager.getInstance().getWatchedMovies();
+        if (watchedMovies == null || watchedMovies.isEmpty()) {
+            llEmptyDiary.setVisibility(View.VISIBLE);
+            diaryAdapter.setWatchedMovies(null);
+        } else {
+            llEmptyDiary.setVisibility(View.GONE);
+            diaryAdapter.setWatchedMovies(watchedMovies);
+        }
     }
 
     @Override

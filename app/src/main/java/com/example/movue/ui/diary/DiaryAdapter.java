@@ -6,27 +6,33 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Movie;
+import com.example.movue.model.WatchedMovie;
+import com.example.movue.utils.MovieManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHolder> {
-    private List<Movie> movies = new ArrayList<>();
-    private OnMovieClickListener listener;
+
+    private List<WatchedMovie> watchedMovies = new ArrayList<>();
+    private final OnMovieClickListener listener;
 
     public interface OnMovieClickListener {
         void onMovieClick(Movie movie);
     }
 
-    public void setOnMovieClickListener(OnMovieClickListener listener) {
+    public DiaryAdapter(OnMovieClickListener listener) {
         this.listener = listener;
     }
 
-    public void setMovies(List<Movie> movies) {
-        this.movies = movies;
+    public void setWatchedMovies(List<WatchedMovie> watchedMovies) {
+        this.watchedMovies = watchedMovies != null ? watchedMovies : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -39,14 +45,22 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
 
     @Override
     public void onBindViewHolder(@NonNull DiaryViewHolder holder, int position) {
-        Movie movie = movies.get(position);
-        holder.tvTitle.setText(movie.getTitle());
-        holder.tvDate.setText("Added to diary"); // Mock date
-        holder.ivPoster.setImageResource(R.drawable.ic_movie_placeholder);
-        holder.ratingBar.setRating(4.5f); // Mock rating
+        WatchedMovie watched = watchedMovies.get(position);
+        Movie movie = MovieManager.getInstance().getMovieById(watched.getMovieId());
+
+        if (movie != null) {
+            holder.tvTitle.setText(movie.getTitle());
+            holder.ivPoster.setImageResource(movie.getPosterResId());
+        } else {
+            holder.tvTitle.setText("Unknown Movie");
+            holder.ivPoster.setImageResource(R.drawable.ic_movie_placeholder);
+        }
+
+        holder.tvDate.setText(watched.getWatchedDate());
+        holder.ratingBar.setRating(watched.getRating());
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
+            if (listener != null && movie != null) {
                 listener.onMovieClick(movie);
             }
         });
@@ -54,7 +68,7 @@ public class DiaryAdapter extends RecyclerView.Adapter<DiaryAdapter.DiaryViewHol
 
     @Override
     public int getItemCount() {
-        return movies.size();
+        return watchedMovies.size();
     }
 
     static class DiaryViewHolder extends RecyclerView.ViewHolder {

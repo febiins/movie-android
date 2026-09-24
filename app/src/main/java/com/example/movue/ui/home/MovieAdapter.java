@@ -5,14 +5,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Movie;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
+
     private List<Movie> movies = new ArrayList<>();
     private OnMovieClickListener listener;
 
@@ -20,12 +24,12 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         void onMovieClick(Movie movie);
     }
 
-    public void setOnMovieClickListener(OnMovieClickListener listener) {
+    public MovieAdapter(OnMovieClickListener listener) {
         this.listener = listener;
     }
 
     public void setMovies(List<Movie> movies) {
-        this.movies = movies;
+        this.movies = movies != null ? movies : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -40,9 +44,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
     public void onBindViewHolder(@NonNull MovieViewHolder holder, int position) {
         Movie movie = movies.get(position);
         holder.tvTitle.setText(movie.getTitle());
-        // In real app, use Glide or Picasso to load image
-        holder.ivPoster.setImageResource(R.drawable.ic_movie_placeholder);
-        
+        holder.ivPoster.setImageResource(movie.getPosterResId());
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onMovieClick(movie);

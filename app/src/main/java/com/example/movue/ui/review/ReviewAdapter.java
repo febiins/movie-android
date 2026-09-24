@@ -5,18 +5,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RatingBar;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Review;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder> {
+
     private List<Review> reviews = new ArrayList<>();
 
     public void setReviews(List<Review> reviews) {
-        this.reviews = reviews;
+        this.reviews = reviews != null ? reviews : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -30,9 +34,9 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
     @Override
     public void onBindViewHolder(@NonNull ReviewViewHolder holder, int position) {
         Review review = reviews.get(position);
-        holder.tvReviewerName.setText("User " + review.getUserId());
+        holder.tvReviewerName.setText(review.getUsername());
         holder.tvReviewText.setText(review.getReviewText());
-        holder.tvReviewDate.setText(review.getCreatedAt());
+        holder.tvReviewDate.setText(review.getDate());
         holder.ratingBar.setRating(review.getRating());
     }
 

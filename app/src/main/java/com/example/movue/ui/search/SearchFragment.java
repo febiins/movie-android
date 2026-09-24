@@ -8,21 +8,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Movie;
 import com.example.movue.ui.movie.MovieDetailsActivity;
-import com.example.movue.viewmodel.MovieViewModel;
-import com.example.movue.viewmodel.ViewModelFactory;
+import com.example.movue.utils.MovieManager;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.util.List;
+
 public class SearchFragment extends Fragment implements SearchAdapter.OnMovieClickListener {
-    private MovieViewModel movieViewModel;
+
     private SearchAdapter searchAdapter;
     private TextView tvEmptySearch;
 
@@ -35,12 +37,12 @@ public class SearchFragment extends Fragment implements SearchAdapter.OnMovieCli
         RecyclerView rvSearchResults = view.findViewById(R.id.rvSearchResults);
         tvEmptySearch = view.findViewById(R.id.tvEmptySearch);
 
-        searchAdapter = new SearchAdapter();
-        searchAdapter.setOnMovieClickListener(this);
+        searchAdapter = new SearchAdapter(this);
         rvSearchResults.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvSearchResults.setAdapter(searchAdapter);
 
-        movieViewModel = new ViewModelProvider(this, new ViewModelFactory(requireContext())).get(MovieViewModel.class);
+        // Display all movies initially
+        performSearch("");
 
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -48,12 +50,7 @@ public class SearchFragment extends Fragment implements SearchAdapter.OnMovieCli
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() > 0) {
-                    performSearch(s.toString());
-                } else {
-                    searchAdapter.setMovies(null);
-                    tvEmptySearch.setVisibility(View.VISIBLE);
-                }
+                performSearch(s != null ? s.toString() : "");
             }
 
             @Override
@@ -64,15 +61,21 @@ public class SearchFragment extends Fragment implements SearchAdapter.OnMovieCli
     }
 
     private void performSearch(String query) {
-        movieViewModel.searchMovies(query).observe(getViewLifecycleOwner(), resource -> {
-            if (resource.data != null && !resource.data.isEmpty()) {
-                searchAdapter.setMovies(resource.data);
-                tvEmptySearch.setVisibility(View.GONE);
-            } else {
-                tvEmptySearch.setVisibility(View.VISIBLE);
-                tvEmptySearch.setText("No movies found");
-            }
-        });
+        List<Movie> results;
+        if (query.trim().isEmpty()) {
+            results = MovieManager.getInstance().getAllMovies();
+        } else {
+            results = MovieManager.getInstance().searchMovies(query);
+        }
+
+        searchAdapter.setMovies(results);
+
+        if (results.isEmpty()) {
+            tvEmptySearch.setVisibility(View.VISIBLE);
+            tvEmptySearch.setText(R.string.search_hint);
+        } else {
+            tvEmptySearch.setVisibility(View.GONE);
+        }
     }
 
     @Override

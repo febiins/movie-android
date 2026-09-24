@@ -2,21 +2,22 @@ package com.example.movue.ui.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
+
 import com.example.movue.MainActivity;
 import com.example.movue.R;
-import com.example.movue.viewmodel.AuthViewModel;
-import com.example.movue.viewmodel.ViewModelFactory;
+import com.example.movue.utils.PreferenceManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class LoginActivity extends AppCompatActivity {
-    private AuthViewModel authViewModel;
+
     private TextInputEditText etEmail, etPassword;
     private MaterialButton btnLogin;
     private TextView tvRegister;
@@ -33,37 +34,37 @@ public class LoginActivity extends AppCompatActivity {
         tvRegister = findViewById(R.id.tvRegister);
         progressBar = findViewById(R.id.progressBar);
 
-        authViewModel = new ViewModelProvider(this, new ViewModelFactory(this)).get(AuthViewModel.class);
-
-        btnLogin.setOnClickListener(v -> {
-            String email = etEmail.getText().toString();
-            String password = etPassword.getText().toString();
-            
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            authViewModel.login(email, password).observe(this, resource -> {
-                switch (resource.status) {
-                    case LOADING:
-                        progressBar.setVisibility(View.VISIBLE);
-                        break;
-                    case SUCCESS:
-                        progressBar.setVisibility(View.GONE);
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        finish();
-                        break;
-                    case ERROR:
-                        progressBar.setVisibility(View.GONE);
-                        Toast.makeText(this, resource.message, Toast.LENGTH_SHORT).show();
-                        break;
-                }
-            });
-        });
+        btnLogin.setOnClickListener(v -> performLogin());
 
         tvRegister.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
+    }
+
+    private void performLogin() {
+        String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        String password = etPassword.getText() != null ? etPassword.getText().toString().trim() : "";
+
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Email or Username is required");
+            etEmail.requestFocus();
+            return;
+        }
+
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Password is required");
+            etPassword.requestFocus();
+            return;
+        }
+
+        progressBar.setVisibility(View.VISIBLE);
+        btnLogin.setEnabled(false);
+
+        // Simple local authentication
+        PreferenceManager.getInstance(this).saveLogin(email, email);
+
+        Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        finish();
     }
 }

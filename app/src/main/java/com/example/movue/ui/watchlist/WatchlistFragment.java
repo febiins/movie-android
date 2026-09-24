@@ -6,20 +6,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Movie;
 import com.example.movue.ui.movie.MovieDetailsActivity;
-import com.example.movue.viewmodel.WatchlistViewModel;
-import com.example.movue.viewmodel.ViewModelFactory;
+import com.example.movue.utils.MovieManager;
+
+import java.util.List;
 
 public class WatchlistFragment extends Fragment implements WatchlistAdapter.OnWatchlistActionListener {
-    private WatchlistViewModel watchlistViewModel;
+
     private WatchlistAdapter watchlistAdapter;
     private TextView tvEmptyWatchlist;
 
@@ -31,28 +34,30 @@ public class WatchlistFragment extends Fragment implements WatchlistAdapter.OnWa
         RecyclerView rvWatchlist = view.findViewById(R.id.rvWatchlist);
         tvEmptyWatchlist = view.findViewById(R.id.tvEmptyWatchlist);
 
-        watchlistAdapter = new WatchlistAdapter();
-        watchlistAdapter.setOnWatchlistActionListener(this);
+        watchlistAdapter = new WatchlistAdapter(this);
         rvWatchlist.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvWatchlist.setAdapter(watchlistAdapter);
 
-        watchlistViewModel = new ViewModelProvider(this, new ViewModelFactory(requireContext())).get(WatchlistViewModel.class);
-        
         loadWatchlist();
 
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadWatchlist();
+    }
+
     private void loadWatchlist() {
-        int userId = 1; // Mock user ID
-        watchlistViewModel.getWatchlist(userId).observe(getViewLifecycleOwner(), resource -> {
-            if (resource.data != null && !resource.data.isEmpty()) {
-                watchlistAdapter.setMovies(resource.data);
-                tvEmptyWatchlist.setVisibility(View.GONE);
-            } else {
-                tvEmptyWatchlist.setVisibility(View.VISIBLE);
-            }
-        });
+        List<Movie> movies = MovieManager.getInstance().getWatchlistMovies();
+        if (movies == null || movies.isEmpty()) {
+            tvEmptyWatchlist.setVisibility(View.VISIBLE);
+            watchlistAdapter.setMovies(null);
+        } else {
+            tvEmptyWatchlist.setVisibility(View.GONE);
+            watchlistAdapter.setMovies(movies);
+        }
     }
 
     @Override
@@ -64,6 +69,8 @@ public class WatchlistFragment extends Fragment implements WatchlistAdapter.OnWa
 
     @Override
     public void onRemoveClick(Movie movie) {
-        // Handle remove from watchlist
+        MovieManager.getInstance().removeFromWatchlist(movie.getId());
+        Toast.makeText(requireContext(), "Removed from Watchlist", Toast.LENGTH_SHORT).show();
+        loadWatchlist();
     }
 }

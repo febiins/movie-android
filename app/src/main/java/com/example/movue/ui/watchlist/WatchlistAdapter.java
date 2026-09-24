@@ -5,28 +5,33 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.movue.R;
 import com.example.movue.model.Movie;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class WatchlistAdapter extends RecyclerView.Adapter<WatchlistAdapter.WatchlistViewHolder> {
+
     private List<Movie> movies = new ArrayList<>();
-    private OnWatchlistActionListener listener;
+    private final OnWatchlistActionListener listener;
 
     public interface OnWatchlistActionListener {
         void onMovieClick(Movie movie);
         void onRemoveClick(Movie movie);
     }
 
-    public void setOnWatchlistActionListener(OnWatchlistActionListener listener) {
+    public WatchlistAdapter(OnWatchlistActionListener listener) {
         this.listener = listener;
     }
 
     public void setMovies(List<Movie> movies) {
-        this.movies = movies;
+        this.movies = movies != null ? movies : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -41,8 +46,8 @@ public class WatchlistAdapter extends RecyclerView.Adapter<WatchlistAdapter.Watc
     public void onBindViewHolder(@NonNull WatchlistViewHolder holder, int position) {
         Movie movie = movies.get(position);
         holder.tvTitle.setText(movie.getTitle());
-        holder.tvYear.setText(movie.getReleaseYear());
-        holder.ivPoster.setImageResource(R.drawable.ic_movie_placeholder);
+        holder.tvYear.setText(String.format(Locale.getDefault(), "%d", movie.getReleaseYear()));
+        holder.ivPoster.setImageResource(movie.getPosterResId());
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {

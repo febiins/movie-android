@@ -1,22 +1,25 @@
 package com.example.movue.ui.review;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.RatingBar;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProvider;
+
 import com.example.movue.R;
 import com.example.movue.model.Review;
-import com.example.movue.viewmodel.ReviewViewModel;
-import com.example.movue.viewmodel.ViewModelFactory;
+import com.example.movue.utils.MovieManager;
+import com.example.movue.utils.PreferenceManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class ReviewActivity extends AppCompatActivity {
-    private ReviewViewModel reviewViewModel;
+
     private RatingBar ratingBar;
     private TextInputEditText etReviewText;
     private MaterialButton btnSubmitReview;
@@ -33,35 +36,40 @@ public class ReviewActivity extends AppCompatActivity {
         etReviewText = findViewById(R.id.etReviewText);
         btnSubmitReview = findViewById(R.id.btnSubmitReview);
 
-        reviewViewModel = new ViewModelProvider(this, new ViewModelFactory(this)).get(ReviewViewModel.class);
+        btnSubmitReview.setOnClickListener(v -> submitReview());
+    }
 
-        btnSubmitReview.setOnClickListener(v -> {
-            float rating = ratingBar.getRating();
-            String reviewText = etReviewText.getText().toString();
+    private void submitReview() {
+        float rating = ratingBar.getRating();
+        String reviewText = etReviewText.getText() != null ? etReviewText.getText().toString().trim() : "";
 
-            if (rating == 0) {
-                Toast.makeText(this, "Please select a rating", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (rating == 0.0f) {
+            Toast.makeText(this, "Please select a rating", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            String date = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
-            Review review = new Review(1, movieId, rating, reviewText, date, date); // Mock userId = 1
+        if (TextUtils.isEmpty(reviewText)) {
+            etReviewText.setError("Review text is required");
+            etReviewText.requestFocus();
+            return;
+        }
 
-            reviewViewModel.createReview(review).observe(this, resource -> {
-                switch (resource.status) {
-                    case LOADING:
-                        btnSubmitReview.setEnabled(false);
-                        break;
-                    case SUCCESS:
-                        Toast.makeText(this, "Review submitted", Toast.LENGTH_SHORT).show();
-                        finish();
-                        break;
-                    case ERROR:
-                        btnSubmitReview.setEnabled(true);
-                        Toast.makeText(this, resource.message, Toast.LENGTH_SHORT).show();
-                        break;
-                }
-            });
-        });
+        String username = PreferenceManager.getInstance(this).getUsername();
+        String date = new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(new Date());
+
+        Review review = new Review(
+                MovieManager.getInstance().getAllReviews().size() + 1,
+                movieId,
+                username,
+                rating,
+                reviewText,
+                date
+        );
+
+        MovieManager.getInstance().addReview(review);
+        MovieManager.getInstance().markAsWatched(movieId, date, rating, reviewText);
+
+        Toast.makeText(this, "Review submitted successfully", Toast.LENGTH_SHORT).show();
+        finish();
     }
 }
